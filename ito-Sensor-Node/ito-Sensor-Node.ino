@@ -8,7 +8,7 @@
  * https://en.wikipedia.org/wiki/Sea_level */
 float local_pressure_hpa = 0;
 float height_above_sea_in_meters = 0;
-Adafruit_BME280 bme;
+Adafruit_BME280 bme_sensor;
 
 /* Weather to output information in the terminal/monitor */
 #define DEBUG_MONITOR 1
@@ -59,12 +59,12 @@ DallasTemperature sensors(&oneWire);
  * https://www.pjrc.com/teensy/td_libs_OneWire.html
  * Link for further information on 1-wire:
  * https://playground.arduino.cc/Learning/OneWire/ */
-// Example device addess/ID: 28 70 F5 E0 16 13 1 C7
+// Example device address/ID: 28 70 F5 E0 16 13 1 C7
 //DeviceAddress sensor1 = { 0x28, 0x70, 0xF5, 0xE0, 0x16, 0x13, 0x1, 0xC7 };
-// Example device addess/ID: 28 1F 6C B 17 13 1 12
-// Example device addess/ID: 28 EA 2F F7 16 13 1 E4
-//DeviceAddress sensor1 = { 0x28, 0x1F, 0x6C, 0xB, 0x17, 0x13, 0x1, 0x12 };
-DeviceAddress sensor1 = { 0x28, 0xEA, 0x2F, 0xF7, 0x16, 0x13, 0x1, 0xE4 };
+// Example device address/ID: 28 1F 6C B 17 13 1 12
+// Example device address/ID: 28 EA 2F F7 16 13 1 E4
+DeviceAddress sensor1 = { 0x28, 0x1F, 0x6C, 0xB, 0x17, 0x13, 0x1, 0x12 };
+//DeviceAddress sensor1 = { 0x28, 0xEA, 0x2F, 0xF7, 0x16, 0x13, 0x1, 0xE4 };
 
 // To use with the onboard OLED display
 #define PIN_SDA 4
@@ -81,10 +81,13 @@ SoftWire sw(PIN_SDA, PIN_SCL);
 #define DISPLAY_ON 1
 SSD1306 display(0x3C, 4, 15);
 
+/* A counter for different purposes
+ * 1) To check visually that new data gets added.
+ * 2) To let different things happen on modulus (%) loops. */
 uint16_t count_loop = 0;
 
 /*
- * the setup routine runs once when you press reset:
+ * The setup routine runs once when you press reset:
  */
 void setup() {
   /* initialize serial communication at 115200 bits per second: */
@@ -93,9 +96,8 @@ void setup() {
   /* Set the pin mode for the gas sensor to be able to read the value */
   pinMode(MQ135_VOLTAGE_PIN, INPUT);
 
-  /* 1-wire */
+  /* Start 1-wire */
   sensors.begin();
-
 
 #if DISPLAY_USE
   pinMode(16,OUTPUT);
@@ -141,14 +143,18 @@ void loop() {
   /* Print data from 1-wire sensors */
   sensors.requestTemperatures(); // Send the command to get temperatures
   delay(100);
-  ColumnAdd(5, sensors.getTempC(sensor1), 1);
+  float temp_liquid = sensors.getTempC(sensor1);
+  ColumnAdd(5, temp_liquid, 1);
 
   /* Print data from the sensor BME280 */
-  ColumnAdd(5, bme_sensor.readTemperature(), 1);
-  ColumnAdd(5, bme_sensor.readHumidity(),  0);
-  ColumnAdd(5, bme_sensor.readPressure() / 100.0F, 2);
-  ColumnAdd(5, bme_sensor.readAltitude(local_pressure_hpa)+height_above_sea_in_meters, 1);
-  /* The funcion bme_sensor.readAltitude() is calculated based on the pressure */
+  float temp_air = bme_sensor.readTemperature();
+  float humi     = bme_sensor.readHumidity();
+  float pres     = bme_sensor.readPressure() / 100.0F;
+  float alt      = bme_sensor.readAltitude(local_pressure_hpa) +height_above_sea_in_meters;
+  ColumnAdd(5, temp_air, 1);
+  ColumnAdd(5, humi,  0);
+  ColumnAdd(5, pres, 2);
+  ColumnAdd(5, alt, 1);
 
   Serial.println("");
 
@@ -162,32 +168,41 @@ void loop() {
     display.init();
     display.setFont(ArialMT_Plain_10);
 
-    int prefill = DisplayPrefill(count);
+    /* Line 1 */
+    int prefill = 0; //DisplayPrefill(count_loop);
     display.drawString( 0,0, "Count:            : itoffice.eu");
-    display.drawString((47+prefill),0, String(count_loop));
+    //display.drawString((47+prefill),0, String(count_loop));
+    /* DisplayPrint(int indent_base, int pixel_y, float/int value_number, int decimals) */
+    DisplayPrint(47, 0, count_loop, 0);
 
-    prefill = DisplayPrefill(lat);
-    display.drawString( 0,10, "Lat  ");
-    display.drawString((25+prefill),10, String(lat));
+    /* Line 2 */
+    //prefill = DisplayPrefill(humi);
+    display.drawString( 0,10, "Humi. ");
+    /* DisplayPrint(int indent_base, int pixel_y, float value_number, int decimals, String unit) */
+    DisplayPrint(25, 10, humi, 0, "%");
 
-    prefill = DisplayPrefill(lon);
-    display.drawString(60,10, "Lon  ");
-    display.drawString((80+prefill),10, String(lon));
+    //prefill = DisplayPrefill(pres);
+    display.drawString(54,10, "Pres.        ");
+    //display.drawString((80+prefill),10, String(pres));
+    DisplayPrint(80, 10, pres, 2);
 
-    prefill = DisplayPrefill(battery_voltage);
-    display.drawString( 0,20, "Bat. voltage              ");
-    display.drawString((60+prefill),20, String(battery_voltage));
+    /* Line 4 */
+    //prefill = DisplayPrefill(temp_air);
+    display.drawString( 0,30, "Air Temp.              ");
+    //display.drawString((60+prefill),20, String(temp_air, 1));
+    DisplayPrint(60, 30, temp_air, 1);
 
-    prefill = DisplayPrefill(internal_temp);
-    display.drawString( 0,30, "Int. temp               ");
-    display.drawString((60+prefill),30, String(internal_temp));
+    /* Line 5 */
+    //prefill = DisplayPrefill(temp_liquid);
+    display.drawString( 0,40, "Liquid Temp.               ");
+    //display.drawString((60+prefill),30, String(temp_liquid, 1));
+    DisplayPrint(60, 40, temp_liquid, 1);
 
-    display.drawString( 0,40, "> TheThingsNetwork.org <");
+    /* Let the display show the data above sat. */
     display.display();
 #endif
 #endif
 
-  /* A counter to check visually that new data gets added */
   count_loop++;
   if( (count_loop%10)==0 )
   {
@@ -197,15 +212,27 @@ void loop() {
   delay(2000);
 }
 
+void DisplayPrint(int indent_base, int pixel_y, float value_number, int decimals)
+{
+  int prefill_to_align_right = DisplayPrefill(value_number);
+  display.drawString((indent_base+prefill_to_align_right), pixel_y, String(value_number, decimals));
+}
+
+void DisplayPrint(int indent_base, int pixel_y, float value_number, int decimals, String unit)
+{
+  int prefill_to_align_right = DisplayPrefill(value_number);
+  display.drawString((indent_base+prefill_to_align_right), pixel_y, String(value_number, decimals));
+  display.drawString((indent_base+prefill_to_align_right+12),pixel_y, unit);
+}
+
 void HeaderPrint()
 {
 #if DEBUG_MONITOR
   Serial.println("");
-  //Serial.print("       int;");
-  Serial.print("     volt;");
-  //Serial.print("uv-index;");
-  Serial.print("       *C;");
-  Serial.print("       *C;");
+  //Serial.print("     volt;");
+  Serial.print("uv-index;");
+  Serial.print("Liquid *C;");
+  Serial.print("Air    *C;");
   Serial.print("  % hum;");
   Serial.print("       hPa;");
   Serial.print("  m.o.s.l;");
@@ -257,7 +284,7 @@ float mapfloat(float x, float in_min, float in_max, float out_min, float out_max
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-/* A helper function to indent a value to be printed */
+/* A helper function to indent a value so that right side is aligned vertically */
 int DisplayPrefill(int value) {
   int prefill = 0;
   if(value < 100){
