@@ -169,34 +169,37 @@ void loop() {
     display.setFont(ArialMT_Plain_10);
 
     /* Line 1 */
-    int prefill = 0; //DisplayPrefill(count_loop);
     display.drawString( 0,0, "Count:            : itoffice.eu");
-    //display.drawString((47+prefill),0, String(count_loop));
     /* DisplayPrint(int indent_base, int pixel_y, float/int value_number, int decimals) */
     DisplayPrint(47, 0, count_loop, 0);
 
     /* Line 2 */
-    //prefill = DisplayPrefill(humi);
     display.drawString( 0,10, "Humi. ");
     /* DisplayPrint(int indent_base, int pixel_y, float value_number, int decimals, String unit) */
     DisplayPrint(25, 10, humi, 0, "%");
 
-    //prefill = DisplayPrefill(pres);
-    display.drawString(54,10, "Pres.        ");
-    //display.drawString((80+prefill),10, String(pres));
-    DisplayPrint(80, 10, pres, 2);
+    /* Line 3 */
+    display.drawString(0,20, "Pres.        ");
+    DisplayPrint(24, 20, pres, 2);
+    display.drawString(66, 20, "Alt.              ");
+    if(alt<1)
+    {
+      /* Add decimal if altitude is lower than 1 meter */
+      DisplayPrint(80, 20, alt, 1, "m");
+    }
+    else
+    {
+      /* Reduce decimal if altitude is higher than 1 meter */
+      DisplayPrint(80, 20, alt, 0, "m");
+    }
 
     /* Line 4 */
-    //prefill = DisplayPrefill(temp_air);
     display.drawString( 0,30, "Air Temp.              ");
-    //display.drawString((60+prefill),20, String(temp_air, 1));
-    DisplayPrint(60, 30, temp_air, 1);
+    DisplayPrint(60, 30, temp_air, 1, "C");
 
     /* Line 5 */
-    //prefill = DisplayPrefill(temp_liquid);
     display.drawString( 0,40, "Liquid Temp.               ");
-    //display.drawString((60+prefill),30, String(temp_liquid, 1));
-    DisplayPrint(60, 40, temp_liquid, 1);
+    DisplayPrint(60, 40, temp_liquid, 1, "C");
 
     /* Let the display show the data above sat. */
     display.display();
@@ -204,6 +207,7 @@ void loop() {
 #endif
 
   count_loop++;
+  /* Print each 10 line the header line. */
   if( (count_loop%10)==0 )
   {
     HeaderPrint();
@@ -211,35 +215,6 @@ void loop() {
 
   delay(2000);
 }
-
-void DisplayPrint(int indent_base, int pixel_y, float value_number, int decimals)
-{
-  int prefill_to_align_right = DisplayPrefill(value_number);
-  display.drawString((indent_base+prefill_to_align_right), pixel_y, String(value_number, decimals));
-}
-
-void DisplayPrint(int indent_base, int pixel_y, float value_number, int decimals, String unit)
-{
-  int prefill_to_align_right = DisplayPrefill(value_number);
-  display.drawString((indent_base+prefill_to_align_right), pixel_y, String(value_number, decimals));
-  display.drawString((indent_base+prefill_to_align_right+12),pixel_y, unit);
-}
-
-void HeaderPrint()
-{
-#if DEBUG_MONITOR
-  Serial.println("");
-  //Serial.print("     volt;");
-  Serial.print("uv-index;");
-  Serial.print("Liquid *C;");
-  Serial.print("Air    *C;");
-  Serial.print("  % hum;");
-  Serial.print("       hPa;");
-  Serial.print("  m.o.s.l;");
-  Serial.println("");
-#endif
-}
-
 
 float UV_Read_mW_cm2(int pinToRead, float volt_divider_volt_max)
 {
@@ -284,7 +259,27 @@ float mapfloat(float x, float in_min, float in_max, float out_min, float out_max
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-/* A helper function to indent a value so that right side is aligned vertically */
+/* Author: Andreas C. Dyhrberg */
+void DisplayPrint(int indent_base, int pixel_y, float value_number, int decimals)
+{
+  int prefill_to_align_right = DisplayPrefill(value_number);
+  display.drawString((indent_base+prefill_to_align_right), pixel_y, String(value_number, decimals));
+}
+
+/* Author: Andreas C. Dyhrberg */
+void DisplayPrint(int indent_base, int pixel_y, float value_number, int decimals, String unit)
+{
+  int prefill_to_align_right = DisplayPrefill(value_number);
+  if(value_number<0 && prefill_to_align_right>3)
+  {
+    prefill_to_align_right = prefill_to_align_right-4;
+  }
+  display.drawString((indent_base+prefill_to_align_right), pixel_y, String(value_number, decimals));
+  display.drawString((indent_base+20+(decimals*8)),pixel_y, unit);
+}
+
+/* A helper function to indent a value so that right side is aligned vertically
+ * Author: Andreas C. Dyhrberg */
 int DisplayPrefill(int value) {
   int prefill = 0;
   if(value < 100){
@@ -299,7 +294,7 @@ int DisplayPrefill(int value) {
 /* Add another value as a column in the serial monitor.
  * param i: stands for the width of the column.
  * param value: value to show.
- * Author: Andreas Dyhrberg */
+ * Author: Andreas C. Dyhrberg */
 void ColumnAdd(int i, float value, int decimals) {
   if (value>=0) {
     Serial.print(" ");
@@ -312,4 +307,19 @@ void ColumnAdd(int i, float value, int decimals) {
   }
   Serial.print(value, decimals);
   Serial.print(";");
+}
+
+void HeaderPrint()
+{
+#if DEBUG_MONITOR
+  Serial.println("");
+  //Serial.print("     volt;");
+  Serial.print("UV-Index;");
+  Serial.print("Liquid *C;");
+  Serial.print("   Air *C;");
+  Serial.print("  Hum %;");
+  Serial.print(" Pres. hPa;");
+  Serial.print(" Altitude;");
+  Serial.println("");
+#endif
 }
