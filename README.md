@@ -25,6 +25,12 @@ Link for calculating possible resistor values:
 ## 1-wire
 Link to program to read out addresses/IDs:
  * https://www.pjrc.com/teensy/td_libs_OneWire.html
+
 Link for further information on 1-wire:
  * https://playground.arduino.cc/Learning/OneWire/
  
+## Extension board and prototyping board
+Available at
+* https://itoffice.eu/product/itoffice-eu-extension-board-for-the-prototyping-board-m_v3-m_v4-and-raspberry-pi-gpios/
+
+* https://itoffice.eu/product/itoffice-eu-prototyping-board-m_v4/
