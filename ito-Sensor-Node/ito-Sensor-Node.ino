@@ -37,12 +37,12 @@ float VOLT_DIVIDER_1_VOLT_MAX = 6.6;
  * Pin 33 belongs to ADC1 but is used for something by the TTGO.
  * Pin 36 can be used (tested by example) */
 int UV_SENSOR_PIN = 36; 
-/* Competes with other analogue sensors for a pin number */
+/* Competes in this code with other analogue sensors for a pin number */
 
 /* Gas sensor voltage
  * Measured with a voltage divider, as a pin only can handle up to 3.3V. */
 int MQ135_VOLTAGE_PIN = 36;
-/* Competes with other analogue sensors for a pin number */
+/* Competes in this code with other analogue sensors for a pin number */
 float MQ135_VOLTAGE_CALIBRATION = 0.30;
 
 /* 1-wire */
@@ -59,12 +59,15 @@ DallasTemperature sensors(&oneWire);
  * https://www.pjrc.com/teensy/td_libs_OneWire.html
  * Link for further information on 1-wire:
  * https://playground.arduino.cc/Learning/OneWire/ */
-// Example device address/ID: 28 70 F5 E0 16 13 1 C7
+/* 1-wire test sensor
+ * Example device address/ID: 28 70 F5 E0 16 13 1 C7 */
 //DeviceAddress sensor1 = { 0x28, 0x70, 0xF5, 0xE0, 0x16, 0x13, 0x1, 0xC7 };
-// Example device address/ID: 28 1F 6C B 17 13 1 12
-// Example device address/ID: 28 EA 2F F7 16 13 1 E4
-DeviceAddress sensor1 = { 0x28, 0x1F, 0x6C, 0xB, 0x17, 0x13, 0x1, 0x12 };
-//DeviceAddress sensor1 = { 0x28, 0xEA, 0x2F, 0xF7, 0x16, 0x13, 0x1, 0xE4 };
+/* 1-wire sensor on the Heltec WiFi Lora 32
+ * Example device address/ID: 28 1F 6C B 17 13 1 12 */
+//DeviceAddress sensor1 = { 0x28, 0x1F, 0x6C, 0xB, 0x17, 0x13, 0x1, 0x12 };
+/* 1-wire sensor on the TTGO
+ * Example device address/ID: 28 EA 2F F7 16 13 1 E4 */
+DeviceAddress sensor1 = { 0x28, 0xEA, 0x2F, 0xF7, 0x16, 0x13, 0x1, 0xE4 };
 
 // To use with the onboard OLED display
 #define PIN_SDA 4
@@ -82,8 +85,8 @@ SoftWire sw(PIN_SDA, PIN_SCL);
 SSD1306 display(0x3C, 4, 15);
 
 /* A counter for different purposes
- * 1) To check visually that new data gets added.
- * 2) To let different things happen on modulus (%) loops. */
+ * 1) To check visually in the display that new data gets added.
+ * 2) To let different things happen on modulus (%) of loops. */
 uint16_t count_loop = 0;
 
 /*
@@ -182,7 +185,7 @@ void loop() {
     display.drawString(0,20, "Pres.        ");
     DisplayPrint(24, 20, pres, 2);
     display.drawString(66, 20, "Alt.              ");
-    if(alt<1)
+    if(alt>-10 && alt<10)
     {
       /* Add decimal if altitude is lower than 1 meter */
       DisplayPrint(80, 20, alt, 1, "m");
