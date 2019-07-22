@@ -89,6 +89,23 @@ SSD1306 display(0x3C, 4, 15);
  * 2) To let different things happen on modulus (%) of loops. */
 uint16_t count_loop = 0;
 
+/* Print header row.
+ * Author: Andreas C. Dyhrberg */
+void HeaderPrint()
+{
+#if DEBUG_MONITOR
+  Serial.println("");
+  //Serial.print("     volt;");
+  Serial.print("UV-Index;");
+  Serial.print("Liquid *C;");
+  Serial.print("   Air *C;");
+  Serial.print("  Hum %;");
+  Serial.print(" Pres. hPa;");
+  Serial.print(" Altitude;");
+  Serial.println("");
+#endif
+}
+
 /*
  * The setup routine runs once when you press reset:
  */
@@ -204,6 +221,10 @@ void loop() {
     display.drawString( 0,40, "Liquid Temp.               ");
     DisplayPrint(60, 40, temp_liquid, 1, "C");
 
+    /* Line 6 */
+    display.drawString( 0,50, "UV Index               ");
+    DisplayPrint(60, 50, uv_mW_cm2, 1);
+
     /* Let the display show the data above sat. */
     display.display();
 #endif
@@ -310,19 +331,4 @@ void ColumnAdd(int i, float value, int decimals) {
   }
   Serial.print(value, decimals);
   Serial.print(";");
-}
-
-void HeaderPrint()
-{
-#if DEBUG_MONITOR
-  Serial.println("");
-  //Serial.print("     volt;");
-  Serial.print("UV-Index;");
-  Serial.print("Liquid *C;");
-  Serial.print("   Air *C;");
-  Serial.print("  Hum %;");
-  Serial.print(" Pres. hPa;");
-  Serial.print(" Altitude;");
-  Serial.println("");
-#endif
 }
